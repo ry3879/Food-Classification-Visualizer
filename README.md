@@ -9,7 +9,7 @@ Features include:
 - There is a forwards and backwards button. Clicking it will go forwards 5 seconds and backwards 5 seconds respectively.
 - A toolbar: this can revert the graph to the original graph (if zoomed in)
 
-# How to get the necessary files
+## How to get the necessary files
 To use fastVisualizer.py, you must have an imu_data file, a video in avi format, and an openpose_data file (optional).
 
 The visualizer script also requires a video. In order to produce a video from your bag file, you can use the following commands in preferably, an empty folder:
@@ -32,7 +32,7 @@ This command produces an mpg named output.avi. You will also have to have the li
 
 To produce the openpose data file, you should have convert the rosbag's topic, 3d_data, to a csv. You can then use the command, **python reorder.py [openpose file]**, to reorder the csv. Then, you must run the reordered file with the command, **python metersToPixels.py [reordered file]** to convert the meters to pixels that can be plotted. This will then give you a file called openpose_pixels.csv, which we will use to run the visualizer. Note: the openpose data is only available to experts.
 
-# How to run the visualizer (one window)
+## How to run the visualizer (one window)
 
 > python fastVisualizer.py [imu_data.csv] [video.avi] [openpose.csv]
 
@@ -40,7 +40,7 @@ Since novices do not have openpose data, you may leave out the openpose.csv file
 
 You should have the fastVisualizer, fastSegment, and animateOpenPose files in the same folder.
 
-# How to run the visualizer (two windows)
+## How to run the visualizer (two windows)
 
 > python fastVisualizer2.py [imu_data1.csv] [video1.avi] [openpose1.csv] [imu_data2.csv] [video2.csv] [openpose2.csv]
 
