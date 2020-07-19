@@ -5,7 +5,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolb
 import cv2
 from PIL import Image
 from PIL import ImageTk
-from fastSegment import *
+from fastSegment2 import *
 import Tkinter as tkinter
 from ttk import *
 import sys
@@ -24,21 +24,19 @@ class App():
         points_df = p_df
         p_length = len(points_df) 
         #calculate what the size of the graphs should be
-        self.width = int(master.winfo_screenwidth()//96//3)
+        self.width = int(master.winfo_screenwidth()//96//4)
         self.height = master.winfo_screenheight()//96//2-.25
-       
+        self.videoheight = int(self.width*96.0/640*480)
+        self.videowidth = self.width*96 
         self.fig = Figure(figsize=(self.width, self.height))
         self.ax = self.fig.add_subplot(111)
         self.fig2 = Figure(figsize=(self.width, self.height))
         self.ax2 = self.fig2.add_subplot(111)
-        self.fig3 = Figure(figsize=(self.width, self.height))
-        self.ax3 = self.fig3.add_subplot(111)
 
         plot_gyro_df(self, gyro_df)
         #initialize vertical lines
         self.ln1 = self.ax.axvline(0,0,.1)
         self.ln2 = self.ax2.axvline(0,0,.1)
-        self.ln3 = self.ax3.axvline(0,0,.1)
         #first graph
         self.canvas1 = FigureCanvasTkAgg(self.fig,master=master)
         #self.canvas1.create_line(10,10,50,50)
@@ -46,11 +44,6 @@ class App():
         self.canvas1.get_tk_widget().grid(row=2, column=0, rowspan=5, columnspan=5,sticky='nesw')
          
         self.canvas1.draw() #self.canvas1.show()
-        
-        #3rd graph on top
-        self.canvas3 = FigureCanvasTkAgg(self.fig3, master=master)
-        self.canvas3.draw() #self.canvas3.show()
-        self.canvas3.get_tk_widget().grid(row=2, column=14, rowspan=5, columnspan=5,sticky='nesw')
         
         #2nd graph on top
         self.canvas2 = FigureCanvasTkAgg(self.fig2,master=master)
@@ -66,10 +59,6 @@ class App():
         toolbar_frame2.grid(row=8, column=6, columnspan=5)
         toolbar2 = NavigationToolbar2TkAgg(self.canvas2, toolbar_frame2)
         
-        toolbar_frame3 = Frame(master)
-        toolbar_frame3.grid(row=8, column=12, columnspan=5)
-        toolbar3 = NavigationToolbar2TkAgg(self.canvas3, toolbar_frame3)
-
         zLabelFrame = Frame(master)
         zLabel = Label(zLabelFrame, text="Z velocity").pack()
         zLabelFrame.grid(row=0,column=0,columnspan=5,sticky='nesw')
@@ -82,14 +71,10 @@ class App():
         xLabel = Label(xLabelFrame, text="Y Linear Acceleration").pack()
         xLabelFrame.grid(row=0,column=7,columnspan=5,sticky='nesw')
         
-        yLabelFrame = Frame(master)
-        yLabel = Label(yLabelFrame, text="W orientation").pack()
-        yLabelFrame.grid(row=0,column=14,columnspan=5,sticky='nesw')
 
         #video
-        imageFrame = Frame(master)
-        imageFrame.grid(row=10, column=0, rowspan=5, columnspan=5, sticky='nesw')        
-        
+        imageFrame = Frame(master,width=self.width)
+        imageFrame.grid(row=10, column=0, rowspan=5, columnspan=5, sticky='nesw')         
                 
         buttonFrame = Frame(master)
         buttonFrame.grid(row=11, column=7, sticky='nesw')
@@ -119,13 +104,10 @@ class App():
             y = seconds + 2.0
             self.ax.set_xlim([x,y])
             self.ax2.set_xlim([x,y])
-            self.ax3.set_xlim([x,y])
             self.ln1.set_data([seconds,seconds], self.ax.get_ylim())
             self.ln2.set_data([seconds,seconds], self.ax2.get_ylim())
-            self.ln3.set_data([seconds,seconds], self.ax3.get_ylim())
             self.canvas1.draw()
             self.canvas2.draw()
-            self.canvas3.draw()
 
         
         def on_clicked_play():
@@ -161,11 +143,9 @@ class App():
                 x2 = time+2
                 self.ax.set_xlim([x1,x2])
                 self.ax2.set_xlim([x1,x2])
-                self.ax3.set_xlim([x1,x2])
                 #update vertical lines
                 self.ln1.set_data([time,time], self.ax.get_ylim())
                 self.ln2.set_data([time,time], self.ax2.get_ylim())
-                self.ln3.set_data([time, time], self.ax3.get_ylim())
 
                 
         cid = self.fig.canvas.mpl_connect('button_press_event', onclick)
@@ -210,14 +190,11 @@ class App():
                     y = seconds + 2.0 #End 2 seconds from now
                     self.ax.set_xlim([x,y])
                     self.ax2.set_xlim([x,y])
-                    self.ax3.set_xlim([x,y])
                     #update vertical lines
                     self.ln1.set_data([seconds,seconds], self.ax.get_ylim())
                     self.ln2.set_data([seconds,seconds], self.ax2.get_ylim())
-                    self.ln3.set_data([seconds, seconds], self.ax3.get_ylim())
                     self.canvas1.show()
                     self.canvas2.show()
-                    self.canvas3.show()
 
             #update image on video
             #640x480
@@ -258,6 +235,7 @@ class App():
             
             cv2image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGBA)
             img = Image.fromarray(cv2image)
+            img = img.resize((self.videowidth, self.videoheight))
             imgtk = ImageTk.PhotoImage(image=img)
             lmain.imgtk = imgtk
             lmain.configure(image=imgtk)
@@ -275,20 +253,37 @@ class App():
 #Call the initialization and start the mainloop (loop forever responding to user input)
 root = tkinter.Tk()
 root.resizable(width=True, height=True)
-width, height = root.winfo_screenwidth(), root.winfo_screenheight()
+width, height = int(root.winfo_screenwidth()/2), root.winfo_screenheight()
 root.geometry('%dx%d+0+0' % (width,height))
 
 gyrofile = read_file(sys.argv[1])
 gyro_df = get_gyro_df(gyrofile)
 video_file = sys.argv[2]
 points_df = pd.DataFrame()
-if(len(sys.argv) == 4):
+if(sys.argv[3] != "novice"):
     openpose_file = sys.argv[3]
     openpose_df = get_openpose_df(openpose_file)
     openpose = get_points(openpose_df)
     points_df = interpolate(openpose)
 
+root2 = tkinter.Toplevel()
+root2.resizable(width=True, height=True)
+width, height = int(root2.winfo_screenwidth()/2), root2.winfo_screenheight()
+root2.geometry('%dx%d+0%d+0' % (width,height,width))
+
+gyrofile2 = read_file(sys.argv[4])
+gyro_df2 = get_gyro_df(gyrofile)
+video_file2 = sys.argv[5]
+points_df2 = pd.DataFrame()
+if(sys.argv[6] != "novice"):
+    openpose_file2 = sys.argv[6]
+    openpose_df2 = get_openpose_df(openpose_file2)
+    openpose2 = get_points(openpose_df2)
+    points_df2 = interpolate(openpose2)
+
+
 app = App(root,gyro_df,video_file,points_df)
+app2 = App(root2,gyro_df2,video_file2,points_df2)
 
 root.mainloop()
 
